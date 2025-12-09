@@ -81,9 +81,11 @@
 
     .board {
       display: grid;
+      grid-template-columns: 1fr minmax(220px, 260px);
       grid-auto-rows: minmax(170px, auto);
       gap: 18px;
       position: relative;
+      align-items: start;
     }
 
     .album-row {
@@ -103,8 +105,8 @@
       background: var(--card);
       border-radius: 14px;
       border: 1px solid rgba(255, 255, 255, 0.05);
-      width: 140px;
-      flex: 0 0 140px;
+      width: 98px;
+      flex: 0 0 98px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -139,22 +141,7 @@
     }
 
     .info {
-      padding: 12px 14px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .name {
-      font-weight: 700;
-      font-size: 15px;
-      margin: 0;
-    }
-
-    .note {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
+      display: none;
     }
 
     .row-label {
@@ -179,6 +166,31 @@
       align-items: flex-start;
     }
     
+    .row-shell:not(.pending-shell) {
+      grid-column: 1;
+    }
+
+    .pending-shell {
+      grid-column: 2;
+      grid-row: 1 / span 10;
+      position: sticky;
+      top: 24px;
+      align-self: start;
+    }
+
+    .pending-shell .album-row {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    .pending-shell .album-card {
+      width: 100%;
+      flex-basis: auto;
+    }
+
     .pending-label {
       border-color: rgba(255, 107, 53, 0.5);
       color: #ffc9b5;
@@ -203,8 +215,8 @@
       }
 
       .album-card {
-        width: 120px;
-        flex-basis: 120px;
+        width: 84px;
+        flex-basis: 84px;
       }
     }
 
@@ -214,8 +226,8 @@
       }
 
       .album-card {
-        width: 110px;
-        flex-basis: 110px;
+        width: 78px;
+        flex-basis: 78px;
       }
     }
   </style>
@@ -247,9 +259,10 @@
     const ROW_COUNT = 3;
     let currentObjectUrls = [];
 
-    function createRow(labelText, key, extraLabelClass) {
+    function createRow(labelText, key, extraLabelClass, extraShellClass) {
       const rowShell = document.createElement('div');
       rowShell.className = 'row-shell';
+      if (extraShellClass) rowShell.classList.add(extraShellClass);
 
       const label = document.createElement('div');
       label.className = 'row-label';
@@ -267,7 +280,7 @@
     }
 
     function createRows() {
-      const pending = createRow('待排区', 'pending', 'pending-label');
+      const pending = createRow('待排区', 'pending', 'pending-label', 'pending-shell');
       const rows = [];
       for (let i = 0; i < ROW_COUNT; i++) {
         rows.push(createRow(`第 ${i + 1} 行`, `row-${i + 1}`));
