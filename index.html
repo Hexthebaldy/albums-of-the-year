@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>年度专辑阵列</title>
+  <style>
+    :root {
+      --ink: #0c111b;
+      --panel: rgba(20, 27, 43, 0.85);
+      --accent: #ff6b35;
+      --accent-2: #34d399;
+      --card: rgba(28, 37, 57, 0.9);
+      --text: #e8edf7;
+      --muted: #a8b3c6;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Avenir Next", "Futura", "Trebuchet MS", sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.12), transparent 35%),
+        radial-gradient(circle at 80% 0%, rgba(255, 107, 53, 0.15), transparent 40%),
+        linear-gradient(135deg, #0a0f1a, #0f1a2d 60%, #0b1726);
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 48px 32px 64px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .title {
+      font-size: 32px;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+      max-width: 760px;
+    }
+
+    .pill {
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .pill strong {
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .board {
+      display: grid;
+      grid-auto-rows: minmax(170px, auto);
+      gap: 18px;
+      position: relative;
+    }
+
+    .album-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      min-height: 170px;
+    }
+
+    .album-card {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      width: 140px;
+      flex: 0 0 140px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      scroll-snap-align: start;
+      cursor: grab;
+      transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    }
+
+    .album-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      border-color: rgba(52, 211, 153, 0.4);
+    }
+
+    .album-card.dragging {
+      opacity: 0.75;
+      border-color: rgba(255, 107, 53, 0.75);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    .cover {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+    }
+
+    .cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .info {
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .name {
+      font-weight: 700;
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .row-label {
+      position: sticky;
+      left: 0;
+      align-self: flex-start;
+      margin-right: 8px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.4px;
+      flex: 0 0 auto;
+      height: fit-content;
+    }
+
+    .row-shell {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    
+    .pending-label {
+      border-color: rgba(255, 107, 53, 0.5);
+      color: #ffc9b5;
+      background: rgba(255, 107, 53, 0.12);
+    }
+
+    @media (max-width: 960px) {
+      .page {
+        padding: 32px 20px 48px;
+      }
+
+      header {
+        gap: 10px;
+      }
+
+      .title {
+        font-size: 26px;
+      }
+
+      .board {
+        gap: 14px;
+      }
+
+      .album-card {
+        width: 120px;
+        flex-basis: 120px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .album-row {
+        min-height: 130px;
+      }
+
+      .album-card {
+        width: 110px;
+        flex-basis: 110px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <h1 class="title" id="pageTitle">年度专辑阵列</h1>
+        <p class="subtitle">所有专辑初始在“待排区”，拖到三行中排榜；也可选择任意目录，自动载入该目录下的图片。</p>
+      </div>
+      <div class="pill"><strong>交互提示</strong> 按住封面拖动，可跨行排序</div>
+      <label class="pill" style="cursor: pointer;">
+        <input type="file" id="dirPicker" webkitdirectory directory multiple hidden>
+        <strong>选择目录</strong> 自动读取目录中的所有图片
+      </label>
+    </header>
+
+    <section class="board" id="board"></section>
+  </main>
+
+  <script>
+    const year = new Date().getFullYear();
+    document.title = `${year} 年度专辑阵列`;
+    const pageTitle = document.getElementById('pageTitle');
+    if (pageTitle) pageTitle.textContent = `${year} 年度专辑阵列`;
+
+    const board = document.getElementById('board');
+    const ROW_COUNT = 3;
+    let currentObjectUrls = [];
+
+    function createRow(labelText, key, extraLabelClass) {
+      const rowShell = document.createElement('div');
+      rowShell.className = 'row-shell';
+
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      if (extraLabelClass) label.classList.add(extraLabelClass);
+      label.textContent = labelText;
+
+      const row = document.createElement('div');
+      row.className = 'album-row';
+      row.dataset.row = key;
+
+      rowShell.appendChild(label);
+      rowShell.appendChild(row);
+      board.appendChild(rowShell);
+      return row;
+    }
+
+    function createRows() {
+      const pending = createRow('待排区', 'pending', 'pending-label');
+      const rows = [];
+      for (let i = 0; i < ROW_COUNT; i++) {
+        rows.push(createRow(`第 ${i + 1} 行`, `row-${i + 1}`));
+      }
+      return { pending, rows };
+    }
+
+    const allRows = createRows();
+    const dropTargets = [allRows.pending, ...allRows.rows];
+
+    function createCard(album) {
+      const card = document.createElement('div');
+      card.className = 'album-card';
+      card.draggable = true;
+      card.innerHTML = `
+        <div class="cover">
+          <img src="${album.src}" alt="${album.title}" />
+        </div>
+        <div class="info">
+          <p class="name">${album.title}</p>
+          <p class="note">拖我换位 / Drag to reorder</p>
+        </div>
+      `;
+      return card;
+    }
+
+    function clearRows() {
+      dropTargets.forEach((row) => {
+        row.innerHTML = '';
+      });
+    }
+
+    function loadAlbums(albums) {
+      clearRows();
+      albums.forEach((album) => {
+        allRows.pending.appendChild(createCard(album));
+      });
+    }
+
+    function revokeObjectUrls() {
+      currentObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+      currentObjectUrls = [];
+    }
+
+    function handleDirectoryChange(event) {
+      const files = Array.from(event.target.files || []).filter((file) =>
+        file.type.startsWith('image/')
+      );
+      if (!files.length) return;
+      revokeObjectUrls();
+      const albums = files.map((file) => {
+        const src = URL.createObjectURL(file);
+        currentObjectUrls.push(src);
+        return {
+          title: file.name.replace(/\.[^.]+$/, ''),
+          src
+        };
+      });
+      loadAlbums(albums);
+    }
+
+    function setupPicker() {
+      const picker = document.getElementById('dirPicker');
+      picker.addEventListener('change', handleDirectoryChange);
+    }
+
+    function setupDragAndDrop() {
+      let draggedCard = null;
+      let scrollFrame = null;
+
+      document.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.album-card');
+        if (!card) return;
+        draggedCard = card;
+        requestAnimationFrame(() => card.classList.add('dragging'));
+      });
+
+      document.addEventListener('dragend', (e) => {
+        const card = e.target.closest('.album-card');
+        if (!card) return;
+        card.classList.remove('dragging');
+        draggedCard = null;
+        if (scrollFrame) cancelAnimationFrame(scrollFrame);
+        scrollFrame = null;
+      });
+
+      dropTargets.forEach((row) => {
+        row.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (!draggedCard) return;
+          const afterElement = getDragAfterElement(row, e.clientX);
+          if (afterElement == null) {
+            row.appendChild(draggedCard);
+          } else {
+            row.insertBefore(draggedCard, afterElement);
+          }
+        });
+
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+        });
+      });
+
+      // Auto-scroll the page while dragging near viewport edges.
+      const edge = 120;
+      const step = 16;
+      function maybeScroll(e) {
+        if (!draggedCard) return;
+        const { clientY } = e;
+        const maxY = window.innerHeight;
+        let delta = 0;
+        if (clientY > maxY - edge) delta = step;
+        else if (clientY < edge) delta = -step;
+        if (delta !== 0) {
+          window.scrollBy(0, delta);
+          scrollFrame = requestAnimationFrame(() => maybeScroll(e));
+        } else if (scrollFrame) {
+          cancelAnimationFrame(scrollFrame);
+          scrollFrame = null;
+        }
+      }
+      document.addEventListener('dragover', maybeScroll);
+    }
+
+    function getDragAfterElement(container, x) {
+      const cards = [...container.querySelectorAll('.album-card:not(.dragging)')];
+      return cards.reduce(
+        (closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = x - box.left - box.width / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset, element: child };
+          }
+          return closest;
+        },
+        { offset: Number.NEGATIVE_INFINITY, element: null }
+      ).element;
+    }
+
+    loadAlbums([]);
+    setupPicker();
+    setupDragAndDrop();
+  </script>
+</body>
+</html>
